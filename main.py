@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(
 
   Assumptions:
   - This model assumes constant investment returns, not realistic/historical market fluctuation. Choose return rates accordingly.
-  - Inflation is not accounted for in this model. It should be included in the investment return rates.
+  - Inflation is not accounted for in this model. It should be accounted for in the investment return rates.
   - All non-spent money is assumed to be invested and earns the return rate.
   - Return rates are assumed to be on total net worth, not necessarily assets. If your assets are significantly leveraged with debt, this may cause inaccuracies.
   ''',
@@ -31,18 +31,17 @@ parser.add_argument('-tw', '--target-worth', type=int, help='If included, a targ
 args = parser.parse_args()
 
 birthdate = datetime.strptime(args.birthdate, '%Y-%m-%d').date()
-retirementAge = args.retirement_age
-worth0 = args.net_worth
-date0 = datetime.strptime(args.net_worth_date, '%Y-%m-%d').date() if args.net_worth_date else date.today()
-workingSalary = args.working_salary
-workingInvReturn = args.working_investment_return
-workingSpending = args.working_spending
-retirementAge = args.retirement_age
-retiredSalary = args.retired_salary
-retiredInvReturn = args.retired_investment_return
-retiredSpending = args.retired_spending
+worth_0 = args.net_worth
+date_0 = datetime.strptime(args.net_worth_date, '%Y-%m-%d').date() if args.net_worth_date else date.today()
+working_salary = args.working_salary
+working_inv_return = args.working_investment_return
+working_spending = args.working_spending
+retirement_age = args.retirement_age
+retired_salary = args.retirement_age
+retired_inv_return = args.retired_investment_return
+retired_spending = args.retired_spending
 
-age0 = (date0 - birthdate) / timedelta(days = 365.25)
+age_0 = (date_0 - birthdate) / timedelta(days = 365.25)
 
 def ageToDate(age):
   return birthdate + timedelta(days = int(age * 365.25))
@@ -50,33 +49,33 @@ def ageToDate(age):
 
 # The key to this is a differential equation: dy/dt = r*y + a  =>  y = Ae^(rt) - a/r, where A is a constant based on the starting sum, r is the annual return,
 # and a is the net yearly saving/spending not related to returns on investment.
-# The first part of this can be derived from the y=Ae^rt continously compounding interest equation and the intuition behind the "+ a" is that the non-interest slope is constant.
+# The first part of this can be derived from the y=Ae^rt continuously compounding interest equation and the intuition behind the "+ a" is that the non-interest slope is constant.
 age = Symbol('age')
-worthWork = (worth0 + (workingSalary-workingSpending)/workingInvReturn) * exp(workingInvReturn*(age-age0)) - (workingSalary-workingSpending)/workingInvReturn
-worthRet = (worthWork.subs(age, retirementAge) + (retiredSalary-retiredSpending)/retiredInvReturn) * exp(retiredInvReturn*(age-retirementAge)) - (retiredSalary-retiredSpending)/retiredInvReturn
+worth_work = (worth_0 + (working_salary-working_spending)/working_inv_return) * exp(working_inv_return*(age-age_0)) - (working_salary-working_spending)/working_inv_return
+worth_ret = (worth_work.subs(age, retirement_age) + (retired_salary-retired_spending)/retired_inv_return) * exp(retired_inv_return*(age-retirement_age)) - (retired_salary-retired_spending)/retired_inv_return
 # Computes the worth at any given age. The piecewise function is necessary to account for the different investment returns during working and retirement years.
-worthInt = Piecewise((worthWork, age <= retirementAge), (worthRet, age > retirementAge)) # Don't let it go beneath 0, cause the interest gets weird.
+worth_by_age = Piecewise((worth_work, age <= retirement_age), (worth_ret, age > retirement_age)) # Don't let it go beneath 0, cause the interest gets weird.
 
-print(f'Est worth at retirement: ${worthRet.subs(age, retirementAge):,.0f}')
+print(f'Est worth at retirement: ${worth_ret.subs(age, retirement_age):,.0f}')
 if args.target_date:
   targetDate = datetime.strptime(args.target_date, '%Y-%m-%d').date()
   targetAge = (targetDate - birthdate) / timedelta(days = 365.25)
-  print(f'Est worth on {targetDate}: ${worthInt.subs(age, targetAge):,.0f}')
+  print(f'Est worth on {targetDate}: ${worth_by_age.subs(age, targetAge):,.0f}')
 print('')
 
 worth = Symbol('worth')
-# Computes the age at which the input worth is achieved. Just the inverse of worthWork. Only valid during working years b/c breaking up the piecewise is complicated.
-worthAge = ln((worth + (workingSalary-workingSpending)/workingInvReturn)/(worth0 + (workingSalary-workingSpending)/workingInvReturn)) / workingInvReturn + age0
-# The retirement "break-even" amount is -1*(retiredSalary-retiredSpending)/annualReturn.
+# Computes the age at which the input worth is achieved. Just the inverse of worth_work. Only valid during working years b/c breaking up the piecewise is complicated.
+age_by_worth = ln((worth + (working_salary-working_spending)/working_inv_return)/(worth_0 + (working_salary-working_spending)/working_inv_return)) / working_inv_return + age_0
+# The retirement "break-even" amount is -1*(retired_salary-retired_spending)/annualReturn.
 # So for no retirement income, $20000 in spending and a 6% return, you must have $333,333 to live forever without ever increasing/decreasing.
-breakEvenAmount = -1*(retiredSalary-retiredSpending)/retiredInvReturn
-print(f'Break-even amount: ${breakEvenAmount:,.0f}')
-breakEvenAge = worthAge.subs(worth, breakEvenAmount)
-print(f'Est break-even age: {breakEvenAge:.2f} / {ageToDate(breakEvenAge)}')
+break_even_worth = -1*(retired_salary-retired_spending)/retired_inv_return
+print(f'Break-even amount: ${break_even_worth:,.0f}')
+break_even_age = age_by_worth.subs(worth, break_even_worth)
+print(f'Est break-even age: {break_even_age:.2f} / {ageToDate(break_even_age)}')
 if args.target_worth:
   targetWorth = args.target_worth
-  targetAge = worthAge.subs(worth, targetWorth)
+  targetAge = age_by_worth.subs(worth, targetWorth)
   print(f'Est age at ${targetWorth:,.0f} (if still working): {targetAge:.2f} / {ageToDate(targetAge)}')
 
 # Plot worth over time
-plot(worthInt, (age, age0, 100), xlabel='Age (years)', ylabel='Net Worth', axis_center=(age0, 0))
+plot(worth_by_age, (age, age_0, 100), xlabel='Age (years)', ylabel='Net Worth', axis_center=(age_0, 0))

@@ -13,10 +13,10 @@ Run it:
 ```bash
 python main.py \
  --birthdate 1970-01-01 \
- --retirement-age 65 \
  --net-worth 50_000 \
  --working-salary 70_000 \
  --working-spending 30_000 \
+ --retirement-age 65 \
  --retired-spending 22_000
 ```
 
@@ -29,6 +29,6 @@ python main.py -h
 
 I created this in 2014 as a (Sage)[https://www.sagemath.org/] script. It was a fun way to experiment with the differential equations behind continuously compounding interest while also planning my own finances. 
 
-In 2020, I ported it to Python and added 
+In 2020, I ported it to Python and added features around back-calculating age from a target net worth.
 
 In 2024, I removed personal data and open sourced it.

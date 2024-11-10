@@ -20,6 +20,12 @@ python main.py \
  --retired-spending 22_000
 ```
 
+It will output:
+- The estimated net worth at retirement and the target date (if provided)
+- The break-even net worth, at which you could sustain your retirement spending off returns alone
+- The estimated age at which the break-even net worth is achieved, and at which the target worth is achieved (if provided)
+- A chart showing the estimated net worth over time
+
 Run `-h` for more details and options:
 ```bash
 python main.py -h

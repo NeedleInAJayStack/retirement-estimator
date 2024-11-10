@@ -5,7 +5,14 @@ from datetime import *
 parser = argparse.ArgumentParser(
   prog='retirement_estimator',
   description='''
-  Estimates net worth throughout time based on current net worth, salary, spending, retirement date, and investment returns.
+  Estimates net worth throughout time based on current net worth, income, spending, retirement date, and investment returns.
+
+  It will output:
+  - The estimated net worth at retirement and the target date (if provided)
+  - The break-even net worth, at which you could sustain your retirement spending off returns alone
+  - The estimated age at which the break-even net worth is achieved, and at which the target worth is achieved (if provided)
+  - A chart showing the estimated net worth over time
+
   The results of this calculator are not a guarantee of future performance. Consult a financial advisor for personalized advice.
 
   Assumptions:

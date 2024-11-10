@@ -26,11 +26,11 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-b', '--birthdate', type=str, help='Birthday', required=True)
 parser.add_argument('-w', '--net-worth', type=int, help='Current net worth', required=True)
 parser.add_argument('-wd', '--net-worth-date', type=str, help='Current net worth date. Assumed to be today', required=False)
-parser.add_argument('-wi', '--working-salary', type=int, help='Average working salary', required=True)
+parser.add_argument('-wi', '--working-income', type=int, help='Average working income, not including investment returns', required=True)
 parser.add_argument('-wr', '--working-investment-return', type=float, help='Investment return during working years', default=0.06, required=False)
 parser.add_argument('-ws', '--working-spending', type=int, help='Average working spending', required=True)
-parser.add_argument('-r', '--retirement-age', type=int, help='Retirement age in years', required=True)
-parser.add_argument('-ri', '--retired-salary', type=int, help='Average retirement salary. Assumed to be 0', default=0, required=False)
+parser.add_argument('-r', '--retirement-age', type=float, help='Retirement age in years', required=True)
+parser.add_argument('-ri', '--retired-income', type=int, help='Average retirement income, not including investment returns. Assumed to be 0', default=0, required=False)
 parser.add_argument('-rr', '--retired-investment-return', type=float, help='Investment return during retirement years', default=0.04, required=False)
 parser.add_argument('-rs', '--retired-spending', type=int, help='Average retirement spending', required=True)
 parser.add_argument('-td', '--target-date', type=str, help='If included, a target date for which to print the net worth', required=False)
@@ -40,11 +40,11 @@ args = parser.parse_args()
 birthdate = datetime.strptime(args.birthdate, '%Y-%m-%d').date()
 worth_0 = args.net_worth
 date_0 = datetime.strptime(args.net_worth_date, '%Y-%m-%d').date() if args.net_worth_date else date.today()
-working_salary = args.working_salary
+working_income = args.working_income
 working_inv_return = args.working_investment_return
 working_spending = args.working_spending
 retirement_age = args.retirement_age
-retired_salary = args.retirement_age
+retired_income = args.retired_income
 retired_inv_return = args.retired_investment_return
 retired_spending = args.retired_spending
 
@@ -58,8 +58,8 @@ def ageToDate(age):
 # and a is the net yearly saving/spending not related to returns on investment.
 # The first part of this can be derived from the y=Ae^rt continuously compounding interest equation and the intuition behind the "+ a" is that the non-interest slope is constant.
 age = Symbol('age')
-worth_work = (worth_0 + (working_salary-working_spending)/working_inv_return) * exp(working_inv_return*(age-age_0)) - (working_salary-working_spending)/working_inv_return
-worth_ret = (worth_work.subs(age, retirement_age) + (retired_salary-retired_spending)/retired_inv_return) * exp(retired_inv_return*(age-retirement_age)) - (retired_salary-retired_spending)/retired_inv_return
+worth_work = (worth_0 + (working_income-working_spending)/working_inv_return) * exp(working_inv_return*(age-age_0)) - (working_income-working_spending)/working_inv_return
+worth_ret = (worth_work.subs(age, retirement_age) + (retired_income-retired_spending)/retired_inv_return) * exp(retired_inv_return*(age-retirement_age)) - (retired_income-retired_spending)/retired_inv_return
 # Computes the worth at any given age. The piecewise function is necessary to account for the different investment returns during working and retirement years.
 worth_by_age = Piecewise((worth_work, age <= retirement_age), (worth_ret, age > retirement_age)) # Don't let it go beneath 0, cause the interest gets weird.
 
@@ -71,11 +71,11 @@ if args.target_date:
 print('')
 
 worth = Symbol('worth')
-# Computes the age at which the input worth is achieved. Just the inverse of worth_work. Only valid during working years b/c breaking up the piecewise is complicated.
-age_by_worth = ln((worth + (working_salary-working_spending)/working_inv_return)/(worth_0 + (working_salary-working_spending)/working_inv_return)) / working_inv_return + age_0
-# The retirement "break-even" amount is -1*(retired_salary-retired_spending)/annualReturn.
+# Computes the age at which the input worth is achieved. Just the inverse of worth_work. Only valid during working years b/c inverting the piecewise can be non-functional.
+age_by_worth = ln((worth + (working_income-working_spending)/working_inv_return)/(worth_0 + (working_income-working_spending)/working_inv_return)) / working_inv_return + age_0
+# The retirement "break-even" amount is -1*(retired_income-retired_spending)/annualReturn.
 # So for no retirement income, $20000 in spending and a 6% return, you must have $333,333 to live forever without ever increasing/decreasing.
-break_even_worth = -1*(retired_salary-retired_spending)/retired_inv_return
+break_even_worth = -1*(retired_income-retired_spending)/retired_inv_return
 print(f'Break-even amount: ${break_even_worth:,.0f}')
 break_even_age = age_by_worth.subs(worth, break_even_worth)
 print(f'Est break-even age: {break_even_age:.2f} / {ageToDate(break_even_age)}')
@@ -85,4 +85,4 @@ if args.target_worth:
   print(f'Est age at ${targetWorth:,.0f} (if still working): {targetAge:.2f} / {ageToDate(targetAge)}')
 
 # Plot worth over time
-plot(worth_by_age, (age, age_0, 100), xlabel='Age (years)', ylabel='Net Worth', axis_center=(age_0, 0))
+plot(worth_by_age, (age, age_0, 100.0), xlabel='Age (years)', ylabel='Net Worth', axis_center=(age_0, 0))

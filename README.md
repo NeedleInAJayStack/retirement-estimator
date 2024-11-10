@@ -12,12 +12,14 @@ pip install -r requirements.txt
 Run it:
 ```bash
 python main.py \
- --birthdate 1970-01-01 \
- --net-worth 50_000 \
- --working-salary 70_000 \
- --working-spending 30_000 \
- --retirement-age 65 \
- --retired-spending 22_000
+  --birthdate 1970-01-01 \
+  --net-worth 50_000 \
+  --working-income 70_000 \
+  --working-spending 30_000 \
+  --retirement-age 65 \
+  --retired-spending 22_000 \
+  --target-date 2025-01-01 \
+  --target-worth 100_000
 ```
 
 It will output:
